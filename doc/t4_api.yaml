@@ -1,0 +1,844 @@
+openapi: 3.0.0
+servers:
+  - description: localhost
+    url: http://127.0.0.1:9000/api/v0.1
+info:
+  description: T4 API
+  version: "0.1"
+  title: T4 API
+  contact:
+    email: yev@t4.ai
+  license:
+    name: PRIVATE
+paths:
+  /accessCode:
+    post:
+      tags:
+        - Access Code
+      description: Creates a new access code (Admin Only)
+      security:
+        - bearerAuth: [admin]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessCode'
+      responses:
+        '200':
+          description: Access code was created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessCode'
+  /accessCode/{code}:
+    get:
+      tags:
+        - Access Code
+      description: Gets an access code (Admin Only)
+      security:
+        - bearerAuth: [admin]
+      parameters:
+        - name: code
+          in: path
+          description: Code whose information you want to retrieve 
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Access code was retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessCode'
+  /accessCode/all:
+    get:
+      tags:
+        - Access Code
+      description: Gets all access code (Admin Only)
+      security:
+        - bearerAuth: [admin]
+      responses:
+        '200':
+          description: Access code was retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccessCode'
+  /accessCode/check:
+    get:
+      tags:
+        - Access Code
+      description: Check if access code is valid
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: code
+          in: query
+          description: Code whose information you want to retrieve 
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Access code is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '400':
+          description: The access code is not valid
+  /accessCode/activate:
+    put:
+      tags:
+        - Access Code
+      description: Activate an access code
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: code
+          in: query
+          description: Code that you want to activate
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Access code has been activated
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '400':
+          description: The access code is not valid
+  /auth/login:
+    post:
+      tags:
+        - Login
+      description: Log in to app
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: sarah@t4.ai
+                password:
+                  type: string
+      responses:
+        '200':
+          description: JWT Token
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - token
+                properties:
+                  token:
+                    type: string
+                    format: jwt
+        '400':
+          description: Login credentials are not valid 
+  /explorer/industries:
+    get:
+      tags:
+        - Industries
+      description: Get all industries, as paths, that a user is subscribed to. This is used to build the taxonomy tree.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: You are logged in
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items: 
+                    type: string
+                    example: Cybersecurity
+  /me:
+    get:
+      tags:
+        - User
+      description: Get profile and dashboard of logged in user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The current user's profile and dashboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/userProfile'
+  /search:
+    get:
+      tags:
+        - Search
+      description: Search the T4 App for reports
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/schemas/searchParams'
+      responses:
+        '200':
+          description: Matching Reports
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalCount:
+                    type: integer
+                    example: 15
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Report'
+  /search/dropdown:
+    get:
+      tags:
+        - Search
+      description: Get options for dropdowns with the give searchParams
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/schemas/searchParams'
+        - name: column
+          in: query
+          description: The column names of dropdowns you want to retrieve
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              example: metric
+        - name: colSubIndex
+          in: query
+          description: The array index of the element you want in each of the columns requested. Enter 0 for non-array columns. Postgres index starts at 1.
+          required: true
+          schema:
+            type: array
+            items:
+              type: integer
+              example: 0
+      responses:
+        '200':
+          description: An array of dropdown options corresponding to the query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: string
+                    example: Sales
+  /user/signup:
+    post:
+      tags:
+        - User
+      description: A new user creates an account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: sarah@t4.ai
+                password:
+                  type: string
+      responses:
+        '200':
+          description: JWT Token
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - token
+                properties:
+                  token:
+                    type: string
+                    format: jwt
+                  newSignup:
+                    type: boolean
+                    example: true
+  /user/email:
+    post:
+      tags:
+        - User
+      description: A new user creates an account with email only
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: sarah@t4.ai
+      responses:
+        '200':
+          description: Success message
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - token
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: fbaac915-b1e1-4491-b586-20f03d91e25c
+                  email:
+                    type: string
+                    format: email
+                    example: sarah@t4.ai
+                  redirect:
+                    type: string
+                    format: url
+                    example: https://www.google.com
+  /user/verifyemail:
+    get:
+      tags:
+        - User
+      description: A user requests a new email to verify their email address
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Success message
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+    put:
+      tags:
+        - User
+      description: A use verifies their email address
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - emailVerificationCode
+              properties:
+                emailVerificationCode:
+                  type: string
+                  example: deioqwr32uiaosdad32r3110
+      responses:
+        '200':
+          description: Success message
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+  /user/changepassword:
+    put:
+      tags:
+        - User
+      description: Change User Password
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - oldPassword
+                - newPassword
+              properties:
+                oldPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Success message
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+  /user/profile:
+    put:
+      tags:
+        - User
+      description: Update user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/userProfile'
+      responses:
+        '200':
+          description: User account information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/userProfile'
+  /user/supportticket:
+    post:
+      tags:
+        - User
+      description: Create a support ticket
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - subject
+                - description
+              properties:
+                subject:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '200':
+          description: Success message
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+  /user/resetpassword:
+    post:
+      tags:
+        - User
+      description: Request Reset Password Email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: sarah@t4.ai
+      responses:
+        '200':
+          description: Success message
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+    get:
+      tags:
+        - User
+      description: Check Password Reset Token
+      parameters:
+        - name: token
+          in: query
+          description: Password reset token
+          required: true
+          schema:
+            type: string
+            example: asdgbDI83reu23d2dqe
+      responses:
+        '200':
+          description: Success message
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+    put:
+      tags:
+        - User
+      description: Reset user password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - token
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: sarah@t4.ai
+                password:
+                  type: string
+                token:
+                  type: string
+                  example: asdgbDI83reu23d2dqe
+      responses:
+        '200':
+          description: Success message
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+  /v/fe:
+    get:
+      tags:
+        - Version
+      description: Gets frontend version
+      responses:
+        '200':
+          description: Frontend version
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - v
+                properties:
+                  v:
+                    type: string
+                    example: 0.0.2
+components:
+  schemas:
+    industry:
+      type: array
+      items: 
+        type: string
+        example: Cybersecurity
+    industries:
+      type: array
+      items:
+        $ref: '#/components/schemas/industry'
+    userSubscription:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          example: PILOT
+    AccessCode:
+      type: object
+      required:
+        - code
+        - data
+        - numTotalUses
+      properties:
+        code:
+          type: string
+          example: secretCode5
+        data:
+          type: object
+          required:
+            - subscription
+            - industriesEnabled
+          properties:
+            subscription:
+              $ref: '#/components/schemas/userSubscription'
+            industriesEnabled:
+              $ref: '#/components/schemas/industries'
+        numTotalUses:
+          type: integer
+          example: 3
+        expiresAt:
+          type: string
+          format: mm/dd/yyyy
+          example: 05/01/2020
+        notes:
+          type: string
+    searchParams:
+      type: object
+      required:
+        - industry
+      properties:
+        industry:
+          $ref: '#/components/schemas/industry'
+        metric:
+          type: string
+          example: Sales
+        segmentation:
+          type: array
+          items: 
+            type: string
+            example: Vendor
+        excludeSubindustries:
+          type: boolean
+          example: false
+        freeReporsOnly:
+          type: boolean
+          example: false
+        sortField:
+          type: string
+          example: datePublished
+        sortOrder:
+          type: string
+          example: DESC
+        quickFilter:
+          type: string
+          example: android
+    recommendedReport:
+      type: object
+      required:
+        - url
+        - title
+        - date
+        - quality
+        - publisher
+      properties:
+        url:
+          type: string
+          format: url
+          example: https://www.google.com
+        title: 
+          type: string
+          example: Trends in Cybersecurity Report
+        quality:
+          type: integer
+          example: 3
+        publisher:
+          type: string
+          example: Gartner
+    recommendedSearch:
+      type: object
+      required:
+        - title
+        - searchParams
+      properties:
+        title: 
+          type: string
+          example: Web Security Market Share
+        searchParams:
+          $ref: '#/components/schemas/searchParams'
+    userProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: fbaac915-b1e1-4491-b586-20f03d91e25c
+        email:
+          type: string
+          format: email
+          example: sarah@t4.ai
+        firstName:
+          type: string
+          example: Sarah
+        lastName:
+          type: string
+          example: Smith
+        phoneNumber:
+          type: string
+          format: phone
+          example: '+14155555555'
+        industriesEnabled:
+          $ref: '#/components/schemas/industries'
+        profileComplete:
+          type: boolean
+          example: true
+        emailVerified:
+          type: boolean
+          example: true
+        preferences:
+          type: object
+        subscription:
+          $ref: '#/components/schemas/userSubscription'
+        searchCount:
+          type: integer
+          example: 500
+        role:
+          type: string
+          example: USER
+        dashboard:
+          type: object
+          properties:
+            recommendedReports:
+              type: array
+              items:
+                $ref: '#/components/schemas/recommendedReport'
+            recommendedSearches:
+              type: array
+              items:
+                $ref: '#/components/schemas/recommendedSearch'
+    Publisher:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: fbaac915-b1e1-4491-b586-20f03d91e25c
+        name:
+          type: string
+          example: Gartner
+        description:
+          type: string
+          example: Gartner is a leading market research publisher
+        quality:
+          type: integer
+          example: 3
+    ReportBranch:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: fbaac915-b1e1-4491-b586-20f03d91e25c
+        industry:
+          $ref: '#/components/schemas/industry'
+        metric:
+          type: string
+          example: Sales
+        segmentation:
+          type: array
+          items: 
+            type: string
+            example: Vendor
+        timeUnit:
+          type: string
+          example: YEAR
+        timeFrom:
+          type: string
+          format: timestamp
+          example: '2017-01-01'
+        timeTo:
+          type: string
+          format: timestamp
+          example: '2018-01-01'
+        dataUnit:
+          type: string
+          example: 'Dollars ($)'
+        unitDescription:
+          type: string
+          example: 'Firewall/Gateway Spending for UK Only'
+        page:
+          type: string
+          example: 5, 6, 7
+        data:
+          type: object
+    Report:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: fbaac915-b1e1-4491-b586-20f03d91e25c
+        name:
+          type: string
+          example: Trends in Cybersecurity Report
+        url:
+          type: string
+          format: url
+          example: https://www.google.com
+        description:
+          type: string
+          example: Gartner is a leading market research publisher
+        datePublished:
+          type: string
+          format: timestamp
+          example: '2019-01-01'
+        keywords:
+          type: string
+        regions:
+          type: array
+          items: 
+            type: string
+            example: North America
+        quality:
+          type: integer
+          example: 3
+        completeness:
+          type: integer
+          example: 2
+        price:
+          type: number
+          example: 500
+        Publisher:
+          $ref: '#/components/schemas/Publisher'
+        manyMoreReportBranches:
+          type: boolean
+          example: false
+        ReportBranches:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportBranch'
+  securitySchemes:
+    name:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
